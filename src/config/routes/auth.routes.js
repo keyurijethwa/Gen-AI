@@ -5,4 +5,11 @@ const authRouter=express.Router()
 
 authRouter.post("/register",authController.registerUserCon)
 
+authRouter.post("/login",authController.loginUserCon)
+
+authRouter.get("/logout",authController.logoutUserCon)
+
+authRouter.get("/get-User",authController.getUserCon)
+
+
 export {authRouter}

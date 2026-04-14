@@ -1,6 +1,7 @@
 import {userModel} from "../../model/user.model.js"
 import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
+import { blacklistModel } from "../model/blacklist.model.js"
 
 async function registerUserCon(req,res){
 
@@ -52,6 +53,76 @@ async function registerUserCon(req,res){
 
 }
 
+async function loginUserCon(req,res) {
+    const {email,password}=req.body
+
+    const user= userModel.findOne({email})
+
+    if(!user){
+        return res.status(400).json({
+            message:"Invalid email"
+        })
+    }
+
+    isPasswordValid= await bcrypt.compare(password,user.password)
+
+    if(!isPasswordValid){
+        return res.status(400).json({
+            message:"Invalid Password"
+        })
+    }
+
+    const token=jwt.sign(
+        {id:user._id,username:user.username},
+        process.env.JWT_SECRET,
+        {expiresIn:"1d"}
+    )
+
+    res.cookie("token",token)
+
+    res.status(200).json({
+        message:"User login successfully",
+        user:{
+            id:user._id,
+            username:user.username,
+            email:user.email
+        }
+    })
+}
+
+async function logoutUserCon(req,res) {
+    const token= req.cookies.token
+
+    if(token){
+        await blacklistModel.create({token})
+
+    }
+
+    res.clearCookie("token")
+
+    res.status(200).json({
+        message:"User logged out successfully"
+    })
+}
+
+async function getUserCon(req,res) {
+    const user=await userModel.findById(req.user.id)
+
+    if(!user){
+        return res.status(400).json({
+            message:"Something wrong with user id"
+        })
+    }
+
+    res.status(200).json({
+        message:"User detailed fetched successfully",
+        user:{
+            id:user._id,
+            username:user.username,
+            email:user.email
+        }
+    })
+}
 
 
-export {registerUserCon}
+export {registerUserCon,loginUserCon,logoutUserCon,getUserCon}
